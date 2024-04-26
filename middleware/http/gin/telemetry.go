@@ -18,9 +18,9 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 
-	"gitlab.seakoi.net/engineer/backend/common/logger"
-	commonmetric "gitlab.seakoi.net/engineer/backend/common/metric"
-	commontrace "gitlab.seakoi.net/engineer/backend/common/trace"
+	"github.com/chaihaobo/gocommon/logger"
+	commonmetric "github.com/chaihaobo/gocommon/metric"
+	commontrace "github.com/chaihaobo/gocommon/trace"
 )
 
 const (

@@ -7,8 +7,8 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/chaihaobo/gocommon/tls"
 	"github.com/go-sql-driver/mysql"
-	"gitlab.seakoi.net/engineer/backend/common/tls"
 )
 
 const (

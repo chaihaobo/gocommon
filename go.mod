@@ -1,4 +1,4 @@
-module gitlab.seakoi.net/engineer/backend/common
+module github.com/chaihaobo/gocommon
 
 go 1.20
 
