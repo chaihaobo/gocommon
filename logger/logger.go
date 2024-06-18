@@ -30,30 +30,33 @@ func New(config Config) (Logger, func() error, error) {
 	c.EncoderConfig.LevelKey = "severity"
 
 	var logRotate *lumberjack.Logger
-	zp, err := c.Build()
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to initialize zap logger %w", err)
-	}
-	core := zp.Core()
-	if config.FileName != "" {
-		logRotate = &lumberjack.Logger{
-			Filename:  config.FileName,
-			MaxSize:   config.MaxSize,
-			MaxAge:    config.MaxAge,
-			LocalTime: false,
-			Compress:  true,
+	var zp = config.ZapLogger
+	if zp == nil {
+		zp, err := c.Build()
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to initialize zap logger %w", err)
+		}
+		core := zp.Core()
+		if config.FileName != "" {
+			logRotate = &lumberjack.Logger{
+				Filename:  config.FileName,
+				MaxSize:   config.MaxSize,
+				MaxAge:    config.MaxAge,
+				LocalTime: false,
+				Compress:  true,
+			}
+
+			core = zapcore.NewTee(zp.Core(), zapcore.
+				NewCore(zapcore.NewJSONEncoder(c.EncoderConfig), zapcore.AddSync(logRotate), zap.InfoLevel))
+
+		}
+		options := []zap.Option{}
+		if config.WithCaller {
+			options = append(options, zap.AddCaller(), zap.AddCallerSkip(config.CallerSkip))
 		}
 
-		core = zapcore.NewTee(zp.Core(), zapcore.
-			NewCore(zapcore.NewJSONEncoder(c.EncoderConfig), zapcore.AddSync(logRotate), zap.InfoLevel))
-
+		zp = zap.New(core, options...)
 	}
-	options := []zap.Option{}
-	if config.WithCaller {
-		options = append(options, zap.AddCaller(), zap.AddCallerSkip(config.CallerSkip))
-	}
-
-	zp = zap.New(core, options...)
 
 	return &zapLogger{
 			logger: zp,

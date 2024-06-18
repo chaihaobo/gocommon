@@ -1,5 +1,7 @@
 package logger
 
+import "go.uber.org/zap"
+
 type Config struct {
 	// Filename is the file to write logs to.  Backup log files will be retained
 	// in the same directory, if fileName is blank it will not write the log to a file.
@@ -18,4 +20,7 @@ type Config struct {
 
 	// CallerSkip is the number of stack frames to skip to find the caller
 	CallerSkip int
+
+	// if set ZapLogger. Logger will use this instance to implementation
+	ZapLogger *zap.Logger
 }
