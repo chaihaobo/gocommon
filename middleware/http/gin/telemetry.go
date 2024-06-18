@@ -80,38 +80,14 @@ func TelemetryMiddleware(serviceName, env string, logger logger.Logger) gin.Hand
 		var statusCode int
 		gctx.Writer = &httpResponseLogger{
 			ResponseWriter: gctx.Writer,
+			serviceName:    serviceName,
+			env:            env,
+			ginCtx:         gctx,
 			context:        ctx,
 			logger:         logger,
 			httpRequest:    request,
 			statusCodePtr:  &statusCode,
 		}
-
-		meter := otel.Meter(commonmetric.DefaultMeterName)
-		// send metric
-		defer func(startTime time.Time) {
-			metricName := fmt.Sprintf("%s_%s", method, request.URL.Path)
-			if serviceName != "" {
-				metricName = serviceName
-			}
-			attrs := []attribute.KeyValue{
-				semconv.HTTPRoute(gctx.FullPath()),
-				semconv.HTTPRequestMethodKey.String(request.Method),
-				semconv.DeploymentEnvironmentKey.String(env),
-				semconv.HTTPResponseStatusCodeKey.Int(statusCode),
-				semconv.HTTPRequestBodySize(int(request.ContentLength)),
-				semconv.HTTPResponseBodySize(int(gctx.Writer.Size())),
-			}
-			if counter, err := meter.Int64Counter(metricName); err == nil {
-				counter.Add(ctx, 1, metric.WithAttributes(attrs...))
-			}
-
-			if histogram, err := meter.Int64Histogram(metricName+".histogram",
-				metric.WithExplicitBucketBoundaries(DefaultTelemetryBucketBoundaries...)); err == nil {
-				histogram.Record(ctx, time.Since(startTime).Milliseconds(),
-					metric.WithAttributes(attrs...))
-			}
-
-		}(time.Now())
 		gctx.Next()
 
 	}
@@ -137,6 +113,9 @@ func logRequest(ctx context.Context, r *http.Request, logger logger.Logger) {
 
 type httpResponseLogger struct {
 	gin.ResponseWriter
+	serviceName   string
+	env           string
+	ginCtx        *gin.Context
 	context       context.Context
 	logger        logger.Logger
 	httpRequest   *http.Request
@@ -149,7 +128,9 @@ func (hrl *httpResponseLogger) Header() http.Header {
 
 func (hrl *httpResponseLogger) Write(bytes []byte) (int, error) {
 	// add metric component
+	request := hrl.httpRequest
 	path := hrl.httpRequest.URL.Path
+	ctx := hrl.context
 	n, err := hrl.ResponseWriter.Write(bytes)
 	if err != nil {
 		return 0, err
@@ -159,6 +140,33 @@ func (hrl *httpResponseLogger) Write(bytes []byte) (int, error) {
 		zap.String(LabelHTTPResponse, string(bytes)),
 		zap.Int(LabelHTTPStatus, hrl.ResponseWriter.Status()),
 	)
+
+	meter := otel.Meter(commonmetric.DefaultMeterName)
+	// send metric
+	defer func(startTime time.Time) {
+		metricName := fmt.Sprintf("%s_%s", method, request.URL.Path)
+		if hrl.serviceName != "" {
+			metricName = hrl.serviceName
+		}
+		attrs := []attribute.KeyValue{
+			semconv.HTTPRoute(hrl.ginCtx.FullPath()),
+			semconv.HTTPRequestMethodKey.String(request.Method),
+			semconv.DeploymentEnvironmentKey.String(hrl.env),
+			semconv.HTTPResponseStatusCodeKey.Int(*hrl.statusCodePtr),
+			semconv.HTTPRequestBodySize(int(request.ContentLength)),
+			semconv.HTTPResponseBodySize(hrl.ginCtx.Writer.Size()),
+		}
+		if counter, err := meter.Int64Counter(metricName); err == nil {
+			counter.Add(ctx, 1, metric.WithAttributes(attrs...))
+		}
+
+		if histogram, err := meter.Int64Histogram(metricName+".histogram",
+			metric.WithExplicitBucketBoundaries(DefaultTelemetryBucketBoundaries...)); err == nil {
+			histogram.Record(ctx, time.Since(startTime).Milliseconds(),
+				metric.WithAttributes(attrs...))
+		}
+
+	}(time.Now())
 
 	return n, nil
 }
