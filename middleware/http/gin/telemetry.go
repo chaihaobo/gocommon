@@ -77,7 +77,6 @@ func TelemetryMiddleware(serviceName, env string, logger logger.Logger) gin.Hand
 			semconv.UserAgentOriginal(request.Header.Get(userAgent)))
 
 		logRequest(ctx, request, logger)
-		var statusCode int
 		gctx.Writer = &httpResponseLogger{
 			ResponseWriter: gctx.Writer,
 			serviceName:    serviceName,
@@ -86,7 +85,6 @@ func TelemetryMiddleware(serviceName, env string, logger logger.Logger) gin.Hand
 			context:        ctx,
 			logger:         logger,
 			httpRequest:    request,
-			statusCodePtr:  &statusCode,
 		}
 		gctx.Next()
 
@@ -113,13 +111,12 @@ func logRequest(ctx context.Context, r *http.Request, logger logger.Logger) {
 
 type httpResponseLogger struct {
 	gin.ResponseWriter
-	serviceName   string
-	env           string
-	ginCtx        *gin.Context
-	context       context.Context
-	logger        logger.Logger
-	httpRequest   *http.Request
-	statusCodePtr *int
+	serviceName string
+	env         string
+	ginCtx      *gin.Context
+	context     context.Context
+	logger      logger.Logger
+	httpRequest *http.Request
 }
 
 func (hrl *httpResponseLogger) Header() http.Header {
@@ -148,11 +145,14 @@ func (hrl *httpResponseLogger) Write(bytes []byte) (int, error) {
 		if hrl.serviceName != "" {
 			metricName = hrl.serviceName
 		}
+		if hrl.ginCtx.FullPath() != "" {
+			path = hrl.ginCtx.FullPath()
+		}
 		attrs := []attribute.KeyValue{
-			semconv.HTTPRoute(hrl.ginCtx.FullPath()),
+			semconv.HTTPRoute(path),
 			semconv.HTTPRequestMethodKey.String(request.Method),
 			semconv.DeploymentEnvironmentKey.String(hrl.env),
-			semconv.HTTPResponseStatusCodeKey.Int(*hrl.statusCodePtr),
+			semconv.HTTPResponseStatusCodeKey.Int(hrl.Status()),
 			semconv.HTTPRequestBodySize(int(request.ContentLength)),
 			semconv.HTTPResponseBodySize(hrl.ginCtx.Writer.Size()),
 		}
@@ -172,8 +172,5 @@ func (hrl *httpResponseLogger) Write(bytes []byte) (int, error) {
 }
 
 func (hrl *httpResponseLogger) WriteHeader(statusCode int) {
-	if hrl.statusCodePtr != nil {
-		*hrl.statusCodePtr = statusCode
-	}
 	hrl.ResponseWriter.WriteHeader(statusCode)
 }
