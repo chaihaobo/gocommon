@@ -43,17 +43,18 @@ var (
 	optionshttp   = []otelhttptrace.Option{otelhttptrace.WithPropagators(commontrace.Propagator)}
 	//	DefaultTelemetryBucketBoundaries 100ms 200ms 400ms 800ms 1s 2s 4s 8s 16s 32s 1m
 	DefaultTelemetryBucketBoundaries = []float64{
-		float64(time.Millisecond * 100),
-		float64(time.Millisecond * 200),
-		float64(time.Millisecond * 400),
-		float64(time.Millisecond * 800),
-		float64(time.Second * 1),
-		float64(time.Second * 2),
-		float64(time.Second * 4),
-		float64(time.Second * 8),
-		float64(time.Second * 16),
-		float64(time.Second * 32),
-		float64(time.Minute * 1),
+		100,
+		200,
+		400,
+		800,
+		float64(time.Second.Milliseconds()),
+		float64(time.Second.Milliseconds() * 1),
+		float64(time.Second.Milliseconds() * 2),
+		float64(time.Second.Milliseconds() * 4),
+		float64(time.Second.Milliseconds() * 8),
+		float64(time.Second.Milliseconds() * 16),
+		float64(time.Second.Milliseconds() * 32),
+		float64(time.Minute.Milliseconds() * 1),
 	}
 )
 
