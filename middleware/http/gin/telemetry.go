@@ -85,6 +85,7 @@ func TelemetryMiddleware(serviceName, env string, logger logger.Logger) gin.Hand
 			context:        ctx,
 			logger:         logger,
 			httpRequest:    request,
+			startTime:      time.Now(),
 		}
 		gctx.Next()
 
@@ -117,6 +118,7 @@ type httpResponseLogger struct {
 	context     context.Context
 	logger      logger.Logger
 	httpRequest *http.Request
+	startTime   time.Time
 }
 
 func (hrl *httpResponseLogger) Header() http.Header {
@@ -166,7 +168,7 @@ func (hrl *httpResponseLogger) Write(bytes []byte) (int, error) {
 				metric.WithAttributes(attrs...))
 		}
 
-	}(time.Now())
+	}(hrl.startTime)
 
 	return n, nil
 }
