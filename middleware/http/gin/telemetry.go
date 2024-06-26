@@ -47,7 +47,6 @@ var (
 		200,
 		400,
 		800,
-		float64(time.Second.Milliseconds()),
 		float64(time.Second.Milliseconds() * 1),
 		float64(time.Second.Milliseconds() * 2),
 		float64(time.Second.Milliseconds() * 4),
