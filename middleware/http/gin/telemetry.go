@@ -77,6 +77,7 @@ func TelemetryMiddleware(serviceName, env string, logger logger.Logger) gin.Hand
 			semconv.UserAgentOriginal(request.Header.Get(userAgent)))
 
 		logRequest(ctx, request, logger)
+		gctx.Request = gctx.Request.Clone(ctx)
 		gctx.Writer = &httpResponseLogger{
 			ResponseWriter: gctx.Writer,
 			serviceName:    serviceName,
