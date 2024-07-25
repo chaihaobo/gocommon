@@ -32,7 +32,8 @@ func New(config Config) (Logger, func() error, error) {
 	var logRotate *lumberjack.Logger
 	var zp = config.ZapLogger
 	if zp == nil {
-		zp, err := c.Build()
+		zapLogger, err := c.Build()
+		zp = zapLogger
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to initialize zap logger %w", err)
 		}
