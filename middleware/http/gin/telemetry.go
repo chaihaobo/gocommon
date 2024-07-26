@@ -74,6 +74,7 @@ func TelemetryMiddleware(serviceName, env string, logger logger.Logger) gin.Hand
 			correlationID.String(span.SpanContext().TraceID().String()+"-"+span.SpanContext().SpanID().String()),
 			semconv.ClientAddress(request.Header.Get(xForwardedFor)),
 			semconv.ServiceName(serviceName),
+			semconv.DeploymentEnvironment(env),
 			semconv.UserAgentOriginal(request.Header.Get(userAgent)))
 
 		logRequest(ctx, request, logger)
@@ -87,6 +88,7 @@ func TelemetryMiddleware(serviceName, env string, logger logger.Logger) gin.Hand
 			logger:         logger,
 			httpRequest:    request,
 			startTime:      time.Now(),
+			span:           span,
 		}
 		gctx.Next()
 
@@ -120,6 +122,7 @@ type httpResponseLogger struct {
 	logger      logger.Logger
 	httpRequest *http.Request
 	startTime   time.Time
+	span        trace.Span
 }
 
 func (hrl *httpResponseLogger) Header() http.Header {
@@ -159,6 +162,8 @@ func (hrl *httpResponseLogger) Write(bytes []byte) (int, error) {
 			semconv.HTTPRequestBodySize(int(request.ContentLength)),
 			semconv.HTTPResponseBodySize(hrl.ginCtx.Writer.Size()),
 		}
+		hrl.span.SetAttributes(attrs...)
+
 		if counter, err := meter.Int64Counter(metricName); err == nil {
 			counter.Add(ctx, 1, metric.WithAttributes(attrs...))
 		}
