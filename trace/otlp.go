@@ -4,30 +4,27 @@ import (
 	"context"
 
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/zipkin"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 )
 
 type (
-	zipkinTracer struct {
+	otlpTracer struct {
 		Tracer
-		exporter *zipkin.Exporter
-		provider TracerProvider
+		exporter *otlptrace.Exporter
 	}
 )
 
-func (z *zipkinTracer) Provider() TracerProvider {
-	return z.provider
+func (o otlpTracer) Close(ctx context.Context) error {
+	return o.Close(ctx)
 }
 
-func (z *zipkinTracer) Close(ctx context.Context) error {
-	return z.exporter.Shutdown(ctx)
-}
-
-func NewZipkinTracer(config Config) (CloseableTracer, error) {
-	exporter, err := zipkin.New(config.CollectorURL)
+func NewOTLPTracer(config Config) (CloseableTracer, error) {
+	exporter, err := otlptracehttp.New(context.Background(), otlptracehttp.WithInsecure(),
+		otlptracehttp.WithURLPath(config.CollectorURL))
 	if err != nil {
 		return nil, err
 	}
@@ -37,9 +34,8 @@ func NewZipkinTracer(config Config) (CloseableTracer, error) {
 	}
 	tp := trace.NewTracerProvider(trace.WithSyncer(exporter), trace.WithResource(res))
 	otel.SetTracerProvider(tp)
-	return &zipkinTracer{
+	return &otlpTracer{
 		Tracer:   otel.Tracer(DefaultTracerName),
 		exporter: exporter,
-		provider: tp,
 	}, nil
 }
