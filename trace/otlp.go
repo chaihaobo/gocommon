@@ -24,7 +24,7 @@ func (o otlpTracer) Close(ctx context.Context) error {
 
 func NewOTLPTracer(config Config) (CloseableTracer, error) {
 	exporter, err := otlptracehttp.New(context.Background(), otlptracehttp.WithInsecure(),
-		otlptracehttp.WithURLPath(config.CollectorURL))
+		otlptracehttp.WithEndpointURL(config.CollectorURL))
 	if err != nil {
 		return nil, err
 	}
