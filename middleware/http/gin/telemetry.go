@@ -34,6 +34,7 @@ const (
 	LabelHTTPResponse = "http.response"
 	LabelHTTPStatus   = "http.status"
 	LabelHTTPService  = "http.service"
+	LabelHTTPQuery    = "http.query"
 	LabelHTTPMethod   = "http.method"
 )
 
@@ -107,6 +108,7 @@ func logRequest(ctx context.Context, r *http.Request, logger logger.Logger) {
 
 	logger.Info(ctx, "Http Request",
 		zap.String(LabelHTTPService, path),
+		zap.String(LabelHTTPQuery, r.URL.RawQuery),
 		zap.Any(LabelHTTPHeader, header),
 		zap.Any(LabelHTTPRequest, requestBody),
 		zap.Any(LabelHTTPMethod, r.Method),
