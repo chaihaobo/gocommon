@@ -19,7 +19,7 @@ type (
 )
 
 func (o otlpTracer) Close(ctx context.Context) error {
-	return o.Close(ctx)
+	return o.exporter.Shutdown(ctx)
 }
 
 func NewOTLPTracer(config Config) (CloseableTracer, error) {
