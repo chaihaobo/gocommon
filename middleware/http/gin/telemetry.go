@@ -68,7 +68,7 @@ func TelemetryMiddleware(serviceName, env string, logger logger.Logger) gin.Hand
 
 		// 记录本次请求的 trace 信息
 		ctx, span := otel.GetTracerProvider().Tracer(commontrace.DefaultTracerName, trace.WithInstrumentationVersion(otelcontrib.Version())).
-			Start(trace.ContextWithRemoteSpanContext(ctx, spanCtx), request.URL.Path)
+			Start(trace.ContextWithRemoteSpanContext(ctx, spanCtx), requestMethodPath(gctx))
 		defer span.End()
 		// 设置 trace 属性
 		span.SetAttributes(method.String(request.Method+" "+request.URL.Path),
@@ -134,14 +134,13 @@ func (hrl *httpResponseLogger) Header() http.Header {
 func (hrl *httpResponseLogger) Write(bytes []byte) (int, error) {
 	// add metric component
 	request := hrl.httpRequest
-	path := hrl.httpRequest.URL.Path
 	ctx := hrl.context
 	n, err := hrl.ResponseWriter.Write(bytes)
 	if err != nil {
 		return 0, err
 	}
 	hrl.logger.Info(hrl.context, "Http Response",
-		zap.String(LabelHTTPService, path),
+		zap.String(LabelHTTPService, request.URL.Path),
 		zap.String(LabelHTTPResponse, string(bytes)),
 		zap.Int(LabelHTTPStatus, hrl.ResponseWriter.Status()),
 	)
@@ -153,9 +152,7 @@ func (hrl *httpResponseLogger) Write(bytes []byte) (int, error) {
 		if hrl.serviceName != "" {
 			metricName = hrl.serviceName
 		}
-		if hrl.ginCtx.FullPath() != "" {
-			path = hrl.ginCtx.FullPath()
-		}
+		path := requestMethodPath(hrl.ginCtx)
 		attrs := []attribute.KeyValue{
 			semconv.HTTPRoute(path),
 			semconv.HTTPRequestMethodKey.String(request.Method),
@@ -179,6 +176,14 @@ func (hrl *httpResponseLogger) Write(bytes []byte) (int, error) {
 	}(hrl.startTime)
 
 	return n, nil
+}
+
+func requestMethodPath(ctx *gin.Context) string {
+	path := ctx.Request.URL.Path
+	if matchedTemplatePath := ctx.FullPath(); matchedTemplatePath != "" {
+		path = matchedTemplatePath
+	}
+	return path
 }
 
 func (hrl *httpResponseLogger) WriteHeader(statusCode int) {
