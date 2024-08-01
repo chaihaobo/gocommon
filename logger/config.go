@@ -29,6 +29,8 @@ type Config struct {
 	Encoding string
 	// SkipStdOutput is true. Logger will not write to standard output
 	SkipStdOutput bool
+	// Level default is debug
+	Level string
 	// if set ZapLogger. Logger will use this instance to implementation
 	ZapLogger *zap.Logger
 }

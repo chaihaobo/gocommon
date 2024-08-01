@@ -54,7 +54,10 @@ func new(config Config) (*zap.Logger, *lumberjack.Logger, error) {
 	c.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	c.EncoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
 	c.EncoderConfig.LevelKey = "severity"
-	c.OutputPaths = []string{"stdout"}
+	level := zapcore.DebugLevel
+	if lvl, err := zapcore.ParseLevel(config.Level); err == nil {
+		level = lvl
+	}
 	encoding := c.Encoding
 	if _, ok := encoderMapping[config.Encoding]; ok {
 		encoding = config.Encoding
@@ -69,29 +72,26 @@ func new(config Config) (*zap.Logger, *lumberjack.Logger, error) {
 			LocalTime: false,
 			Compress:  true,
 		}
-		cores := make([]zapcore.Core, 0)
-		writerSyncers := map[zapcore.WriteSyncer]zapcore.LevelEnabler{
-			zapcore.AddSync(logRotate): zap.DebugLevel,
+		writerSyncers := []zapcore.WriteSyncer{
+			zapcore.AddSync(logRotate),
 		}
 
 		if !config.SkipStdOutput {
-			writerSyncers[zapcore.Lock(os.Stdout)] = zap.NewAtomicLevelAt(zap.InfoLevel)
+			writerSyncers = append(writerSyncers, zapcore.Lock(os.Stdout))
 		}
-		for syncer, enabler := range writerSyncers {
-			if config.BufferSize > 0 {
-				flushInterval := time.Second
-				if config.FlushBufferInterval > 0 {
-					flushInterval = config.FlushBufferInterval
-				}
-				syncer = &zapcore.BufferedWriteSyncer{
-					WS:            syncer,
-					Size:          config.BufferSize,
-					FlushInterval: flushInterval,
-				}
+		finalSyncer := zapcore.NewMultiWriteSyncer(writerSyncers...)
+		if config.BufferSize > 0 {
+			flushInterval := time.Second
+			if config.FlushBufferInterval > 0 {
+				flushInterval = config.FlushBufferInterval
 			}
-			cores = append(cores, zapcore.NewCore(encoderMapping[encoding](c.EncoderConfig), syncer, enabler))
+			finalSyncer = &zapcore.BufferedWriteSyncer{
+				WS:            finalSyncer,
+				Size:          config.BufferSize,
+				FlushInterval: flushInterval,
+			}
 		}
-		core = zapcore.NewTee(cores...)
+		core = zapcore.NewCore(encoderMapping[encoding](c.EncoderConfig), finalSyncer, level)
 	}
 	var options []zap.Option
 	if config.WithCaller {
