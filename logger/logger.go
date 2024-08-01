@@ -2,7 +2,8 @@ package logger
 
 import (
 	"context"
-	"fmt"
+	"os"
+	"time"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -24,41 +25,15 @@ type Logger interface {
 
 // New create new instant for the Logger.
 func New(config Config) (Logger, func() error, error) {
-	c := zap.NewProductionConfig()
-	c.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	c.EncoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
-	c.EncoderConfig.LevelKey = "severity"
-
-	var logRotate *lumberjack.Logger
 	var zp = config.ZapLogger
+	var logRotate *lumberjack.Logger
+	var err error
 	if zp == nil {
-		zapLogger, err := c.Build()
-		zp = zapLogger
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to initialize zap logger %w", err)
-		}
-		core := zp.Core()
-		if config.FileName != "" {
-			logRotate = &lumberjack.Logger{
-				Filename:  config.FileName,
-				MaxSize:   config.MaxSize,
-				MaxAge:    config.MaxAge,
-				LocalTime: false,
-				Compress:  true,
-			}
-
-			core = zapcore.NewTee(zp.Core(), zapcore.
-				NewCore(zapcore.NewJSONEncoder(c.EncoderConfig), zapcore.AddSync(logRotate), zap.InfoLevel))
-
-		}
-		options := []zap.Option{}
-		if config.WithCaller {
-			options = append(options, zap.AddCaller(), zap.AddCallerSkip(config.CallerSkip))
-		}
-
-		zp = zap.New(core, options...)
+		zp, logRotate, err = new(config)
 	}
-
+	if err != nil {
+		return nil, nil, err
+	}
 	return &zapLogger{
 			logger: zp,
 		}, func() (err error) {
@@ -68,4 +43,60 @@ func New(config Config) (Logger, func() error, error) {
 			}
 			return
 		}, nil
+}
+
+func new(config Config) (*zap.Logger, *lumberjack.Logger, error) {
+	encoderMapping := map[string]func(cfg zapcore.EncoderConfig) zapcore.Encoder{
+		"json":    zapcore.NewJSONEncoder,
+		"console": zapcore.NewConsoleEncoder,
+	}
+	c := zap.NewProductionConfig()
+	c.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	c.EncoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
+	c.EncoderConfig.LevelKey = "severity"
+	c.OutputPaths = []string{"stdout"}
+	encoding := c.Encoding
+	if _, ok := encoderMapping[config.Encoding]; ok {
+		encoding = config.Encoding
+	}
+	core := zapcore.NewNopCore()
+	var logRotate *lumberjack.Logger
+	if config.FileName != "" {
+		logRotate = &lumberjack.Logger{
+			Filename:  config.FileName,
+			MaxSize:   config.MaxSize,
+			MaxAge:    config.MaxAge,
+			LocalTime: false,
+			Compress:  true,
+		}
+		stdoutWriteSyncer := zapcore.Lock(os.Stdout)
+		if config.BufferSize > 0 {
+			flushInterval := time.Second
+			if config.FlushBufferInterval > 0 {
+				flushInterval = config.FlushBufferInterval
+			}
+			stdoutBufferedWriteSyncer := &zapcore.BufferedWriteSyncer{
+				WS:            os.Stdout,
+				Size:          config.BufferSize,
+				FlushInterval: flushInterval,
+			}
+			stdoutWriteSyncer = stdoutBufferedWriteSyncer
+		}
+
+		core = zapcore.NewTee(
+			zapcore.NewCore(encoderMapping[encoding](c.EncoderConfig), stdoutWriteSyncer, zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+				return lvl < zap.ErrorLevel
+			})),
+			zapcore.NewCore(encoderMapping[encoding](c.EncoderConfig), zapcore.Lock(os.Stderr), zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+				return lvl >= zap.ErrorLevel
+			})),
+			zapcore.NewCore(encoderMapping[encoding](c.EncoderConfig), zapcore.AddSync(logRotate), zap.DebugLevel))
+
+	}
+	var options []zap.Option
+	if config.WithCaller {
+		options = append(options, zap.AddCaller(), zap.AddCallerSkip(config.CallerSkip))
+	}
+	zp := zap.New(core, options...)
+	return zp, logRotate, nil
 }
