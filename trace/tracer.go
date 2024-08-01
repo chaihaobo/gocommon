@@ -57,6 +57,7 @@ func initTraceProvider(config Config, exporter oteltrace.SpanExporter) {
 		sampleRate = config.SampleRate
 	}
 	sampler := oteltrace.TraceIDRatioBased(sampleRate)
-	tp := oteltrace.NewTracerProvider(oteltrace.WithSyncer(exporter), oteltrace.WithResource(res), oteltrace.WithSampler(sampler))
+	tp := oteltrace.NewTracerProvider(oteltrace.WithBatcher(exporter),
+		oteltrace.WithResource(res), oteltrace.WithSampler(sampler))
 	otel.SetTracerProvider(tp)
 }
