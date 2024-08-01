@@ -27,6 +27,8 @@ type Config struct {
 	FlushBufferInterval time.Duration
 	// Encoding json || console
 	Encoding string
+	// SkipStdOutput is true. Logger will not write to standard output
+	SkipStdOutput bool
 	// if set ZapLogger. Logger will use this instance to implementation
 	ZapLogger *zap.Logger
 }

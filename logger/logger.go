@@ -69,29 +69,32 @@ func new(config Config) (*zap.Logger, *lumberjack.Logger, error) {
 			LocalTime: false,
 			Compress:  true,
 		}
-		stdoutWriteSyncer := zapcore.Lock(os.Stdout)
-		if config.BufferSize > 0 {
-			flushInterval := time.Second
-			if config.FlushBufferInterval > 0 {
-				flushInterval = config.FlushBufferInterval
+		cores := []zapcore.Core{
+			zapcore.NewCore(encoderMapping[encoding](c.EncoderConfig), zapcore.AddSync(logRotate), zap.DebugLevel),
+		}
+		if !config.SkipStdOutput {
+			stdoutWriteSyncer := zapcore.Lock(os.Stdout)
+			if config.BufferSize > 0 {
+				flushInterval := time.Second
+				if config.FlushBufferInterval > 0 {
+					flushInterval = config.FlushBufferInterval
+				}
+				stdoutBufferedWriteSyncer := &zapcore.BufferedWriteSyncer{
+					WS:            os.Stdout,
+					Size:          config.BufferSize,
+					FlushInterval: flushInterval,
+				}
+				stdoutWriteSyncer = stdoutBufferedWriteSyncer
 			}
-			stdoutBufferedWriteSyncer := &zapcore.BufferedWriteSyncer{
-				WS:            os.Stdout,
-				Size:          config.BufferSize,
-				FlushInterval: flushInterval,
-			}
-			stdoutWriteSyncer = stdoutBufferedWriteSyncer
+			cores = append(cores, zapcore.NewCore(encoderMapping[encoding](c.EncoderConfig), stdoutWriteSyncer, zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+				return lvl < zap.ErrorLevel
+			})))
+			cores = append(cores, zapcore.NewCore(encoderMapping[encoding](c.EncoderConfig), zapcore.Lock(os.Stderr), zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+				return lvl >= zap.ErrorLevel
+			})))
 		}
 
-		core = zapcore.NewTee(
-			zapcore.NewCore(encoderMapping[encoding](c.EncoderConfig), stdoutWriteSyncer, zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
-				return lvl < zap.ErrorLevel
-			})),
-			zapcore.NewCore(encoderMapping[encoding](c.EncoderConfig), zapcore.Lock(os.Stderr), zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
-				return lvl >= zap.ErrorLevel
-			})),
-			zapcore.NewCore(encoderMapping[encoding](c.EncoderConfig), zapcore.AddSync(logRotate), zap.DebugLevel))
-
+		core = zapcore.NewTee(cores...)
 	}
 	var options []zap.Option
 	if config.WithCaller {
