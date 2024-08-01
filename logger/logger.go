@@ -69,31 +69,28 @@ func new(config Config) (*zap.Logger, *lumberjack.Logger, error) {
 			LocalTime: false,
 			Compress:  true,
 		}
-		cores := []zapcore.Core{
-			zapcore.NewCore(encoderMapping[encoding](c.EncoderConfig), zapcore.AddSync(logRotate), zap.DebugLevel),
+		cores := make([]zapcore.Core, 0)
+		writerSyncers := map[zapcore.WriteSyncer]zapcore.LevelEnabler{
+			zapcore.AddSync(logRotate): zap.DebugLevel,
 		}
+
 		if !config.SkipStdOutput {
-			stdoutWriteSyncer := zapcore.Lock(os.Stdout)
+			writerSyncers[zapcore.Lock(os.Stdout)] = zap.NewAtomicLevelAt(zap.InfoLevel)
+		}
+		for syncer, enabler := range writerSyncers {
 			if config.BufferSize > 0 {
 				flushInterval := time.Second
 				if config.FlushBufferInterval > 0 {
 					flushInterval = config.FlushBufferInterval
 				}
-				stdoutBufferedWriteSyncer := &zapcore.BufferedWriteSyncer{
-					WS:            os.Stdout,
+				syncer = &zapcore.BufferedWriteSyncer{
+					WS:            syncer,
 					Size:          config.BufferSize,
 					FlushInterval: flushInterval,
 				}
-				stdoutWriteSyncer = stdoutBufferedWriteSyncer
 			}
-			cores = append(cores, zapcore.NewCore(encoderMapping[encoding](c.EncoderConfig), stdoutWriteSyncer, zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
-				return lvl < zap.ErrorLevel
-			})))
-			cores = append(cores, zapcore.NewCore(encoderMapping[encoding](c.EncoderConfig), zapcore.Lock(os.Stderr), zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
-				return lvl >= zap.ErrorLevel
-			})))
+			cores = append(cores, zapcore.NewCore(encoderMapping[encoding](c.EncoderConfig), syncer, enabler))
 		}
-
 		core = zapcore.NewTee(cores...)
 	}
 	var options []zap.Option
