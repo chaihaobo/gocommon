@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -56,6 +57,12 @@ var (
 		float64(time.Second.Milliseconds() * 32),
 		float64(time.Minute.Milliseconds() * 1),
 	}
+	binaryContentTypes = []string{
+		"application/octet-stream",
+		"image/",
+		"audio/",
+		"video/",
+	}
 )
 
 func TelemetryMiddleware(serviceName, env string, logger logger.Logger) gin.HandlerFunc {
@@ -100,12 +107,13 @@ func logRequest(ctx context.Context, r *http.Request, logger logger.Logger) {
 	path := r.URL.Path
 	header := r.Header
 	var requestBody string
-	rawBody, err := io.ReadAll(r.Body)
-	if err == nil {
-		r.Body = io.NopCloser(bytes.NewBuffer(rawBody))
-		requestBody = string(rawBody)
+	if !isBinaryRequest(r) && !isMultipartRequest(r) {
+		rawBody, err := io.ReadAll(r.Body)
+		if err == nil {
+			r.Body = io.NopCloser(bytes.NewBuffer(rawBody))
+			requestBody = string(rawBody)
+		}
 	}
-
 	logger.Info(ctx, "Http Request",
 		zap.String(LabelHTTPService, path),
 		zap.String(LabelHTTPQuery, r.URL.RawQuery),
@@ -113,6 +121,22 @@ func logRequest(ctx context.Context, r *http.Request, logger logger.Logger) {
 		zap.Any(LabelHTTPRequest, requestBody),
 		zap.Any(LabelHTTPMethod, r.Method),
 	)
+}
+
+func isMultipartRequest(r *http.Request) bool {
+	contentType := r.Header.Get("Content-Type")
+	return strings.HasPrefix(contentType, "multipart/")
+}
+
+func isBinaryRequest(r *http.Request) bool {
+	contentType := r.Header.Get("Content-Type")
+	// Check if the Content-Type is in the list of binary content types
+	for _, binaryType := range binaryContentTypes {
+		if strings.HasPrefix(contentType, binaryType) {
+			return true
+		}
+	}
+	return false
 }
 
 type httpResponseLogger struct {
