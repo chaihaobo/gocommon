@@ -43,7 +43,7 @@ func newCloseableTracer(config Config, exporter oteltrace.SpanExporter) Closeabl
 	initTraceProvider(config, exporter)
 	return &closeableTracer{
 		Tracer:   otel.Tracer(DefaultTracerName),
-		exporter: nil,
+		exporter: exporter,
 	}
 }
 
