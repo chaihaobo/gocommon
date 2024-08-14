@@ -63,7 +63,11 @@ func new(config Config) (*zap.Logger, *lumberjack.Logger, error) {
 		encoding = config.Encoding
 	}
 	core := zapcore.NewNopCore()
+	writerSyncers := make([]zapcore.WriteSyncer, 0)
 	var logRotate *lumberjack.Logger
+	if !config.SkipStdOutput {
+		writerSyncers = append(writerSyncers, zapcore.Lock(os.Stdout))
+	}
 	if config.FileName != "" {
 		logRotate = &lumberjack.Logger{
 			Filename:  config.FileName,
@@ -72,27 +76,21 @@ func new(config Config) (*zap.Logger, *lumberjack.Logger, error) {
 			LocalTime: false,
 			Compress:  true,
 		}
-		writerSyncers := []zapcore.WriteSyncer{
-			zapcore.AddSync(logRotate),
-		}
-
-		if !config.SkipStdOutput {
-			writerSyncers = append(writerSyncers, zapcore.Lock(os.Stdout))
-		}
-		finalSyncer := zapcore.NewMultiWriteSyncer(writerSyncers...)
-		if config.BufferSize > 0 {
-			flushInterval := time.Second
-			if config.FlushBufferInterval > 0 {
-				flushInterval = config.FlushBufferInterval
-			}
-			finalSyncer = &zapcore.BufferedWriteSyncer{
-				WS:            finalSyncer,
-				Size:          config.BufferSize,
-				FlushInterval: flushInterval,
-			}
-		}
-		core = zapcore.NewCore(encoderMapping[encoding](c.EncoderConfig), finalSyncer, level)
+		writerSyncers = append(writerSyncers, zapcore.AddSync(logRotate))
 	}
+	finalSyncer := zapcore.NewMultiWriteSyncer(writerSyncers...)
+	if config.BufferSize > 0 {
+		flushInterval := time.Second
+		if config.FlushBufferInterval > 0 {
+			flushInterval = config.FlushBufferInterval
+		}
+		finalSyncer = &zapcore.BufferedWriteSyncer{
+			WS:            finalSyncer,
+			Size:          config.BufferSize,
+			FlushInterval: flushInterval,
+		}
+	}
+	core = zapcore.NewCore(encoderMapping[encoding](c.EncoderConfig), finalSyncer, level)
 	var options []zap.Option
 	if config.WithCaller {
 		options = append(options, zap.AddCaller(), zap.AddCallerSkip(config.CallerSkip))
