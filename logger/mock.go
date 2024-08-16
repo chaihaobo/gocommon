@@ -51,7 +51,7 @@ func (_m *MockLogger) Warn(ctx context.Context, msg string, fields ...zapcore.Fi
 	_m.Called(_ca...)
 }
 
-// NewLogger creates a new instance of Logger. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// NewLogger creates a newZapLogger instance of Logger. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewLogger(t interface {
 	mock.TestingT

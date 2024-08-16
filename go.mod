@@ -1,6 +1,6 @@
 module github.com/chaihaobo/gocommon
 
-go 1.20
+go 1.21
 
 require (
 	github.com/gin-gonic/gin v1.9.1
@@ -60,6 +60,7 @@ require (
 	github.com/ugorji/go/codec v1.2.11 // indirect
 	go.opentelemetry.io/proto/otlp v1.1.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
+	go.uber.org/zap/exp v0.2.0 // indirect
 	golang.org/x/arch v0.3.0 // indirect
 	golang.org/x/crypto v0.16.0 // indirect
 	golang.org/x/net v0.19.0 // indirect

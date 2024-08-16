@@ -23,29 +23,33 @@ type Logger interface {
 	Error(ctx context.Context, msg string, err error, fields ...zap.Field)
 }
 
-// New create new instant for the Logger.
+// New create newZapLogger instant for the Logger.
 func New(config Config) (Logger, func() error, error) {
 	var zp = config.ZapLogger
 	var logRotate *lumberjack.Logger
 	var err error
 	if zp == nil {
-		zp, logRotate, err = new(config)
+		zp, logRotate, err = newZapLogger(config)
 	}
 	if err != nil {
 		return nil, nil, err
 	}
 	return &zapLogger{
-			logger: zp,
-		}, func() (err error) {
-			err = zp.Sync()
-			if logRotate != nil {
-				err = logRotate.Close()
-			}
-			return
-		}, nil
+		logger: zp,
+	}, closer(zp, logRotate), nil
 }
 
-func new(config Config) (*zap.Logger, *lumberjack.Logger, error) {
+func closer(zp *zap.Logger, logRotate *lumberjack.Logger) func() (err error) {
+	return func() (err error) {
+		err = zp.Sync()
+		if logRotate != nil {
+			err = logRotate.Close()
+		}
+		return
+	}
+}
+
+func newZapLogger(config Config) (*zap.Logger, *lumberjack.Logger, error) {
 	encoderMapping := map[string]func(cfg zapcore.EncoderConfig) zapcore.Encoder{
 		"json":    zapcore.NewJSONEncoder,
 		"console": zapcore.NewConsoleEncoder,
