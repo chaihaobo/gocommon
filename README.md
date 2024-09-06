@@ -98,6 +98,6 @@ if err != nil {
     panic(err)
 }
 defer f()
-    gin.New().Use(ginmiddleware.TelemetryMiddleware("service", "dev", logger))
+gin.New().Use(ginmiddleware.TelemetryMiddleware("service", "dev", logger))
 ```
 
