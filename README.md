@@ -21,14 +21,14 @@ ctx = context.Async(ctx)
 
 ```go
 logger, f, err := logger.New(logger.Config{
-FileName:   "",
-MaxSize:    10 << 20,
-MaxAge:     1, // days
-WithCaller: true,
-CallerSkip: 1,
+    FileName:   "",
+    MaxSize:    10 << 20,
+    MaxAge:     1, // days
+    WithCaller: true,
+    CallerSkip: 1,
 })
 if err != nil {
-panic(err)
+    panic(err)
 }
 defer f()
 logger.Info(context.Background(), "info message", zap.String("key", "value"))
@@ -41,25 +41,25 @@ logger.Info(context.Background(), "info message", zap.String("key", "value"))
 ```go
 ctx := context.Background()
 meter, err := metric.NewPrometheusMetric(metric.Config{
-ServiceName: "service name", // service name
-Port:        0,              // 会启动 metric server 监听这个端口
-Registerer:  nil, // 自定义 registerer. 不传递使用默认的实现
-Gatherer:    nil, // 自定义 gatherer. 不传递使用默认的实现
+    ServiceName: "service name", // service name
+    Port:        0,              // 会启动 metric server 监听这个端口
+    Registerer:  nil, // 自定义 registerer. 不传递使用默认的实现
+    Gatherer:    nil, // 自定义 gatherer. 不传递使用默认的实现
 })
 if err != nil {
-panic(err)
+    panic(err)
 }
 
 if counter, err := meter.Int64Counter("counter"); err == nil {
-counter.Add(ctx, 1, otelmetric.WithAttributes(
-attribute.String("status", "200"),
+    counter.Add(ctx, 1, otelmetric.WithAttributes(
+    attribute.String("status", "200"),
 ))
 }
 // or use
 if counter, err := otel.Meter("meter name").Int64Counter("counter"); err == nil {
-counter.Add(ctx, 1, otelmetric.WithAttributes(
-attribute.String("status", "200"),
-))
+    counter.Add(ctx, 1, otelmetric.WithAttributes(
+        attribute.String("status", "200"),
+    ))
 }
 
 ```
@@ -71,11 +71,11 @@ attribute.String("status", "200"),
 
 ```go
 tracer, err := trace.NewZipkinTracer(trace.Config{
-CollectorURL: "http://localhost:9411/api/v2/spans", // 可以为空. 不会影响服务业务逻辑
-ServiceName:  "service name",
+    CollectorURL: "http://localhost:9411/api/v2/spans", // 可以为空. 不会影响服务业务逻辑
+    ServiceName:  "service name",
 })
 if err != nil {
-panic(err)
+    panic(err)
 }
 ctx := context.Background()
 ctx, span := tracer.Start(ctx, "userService.login", oteltrace.WithAttributes())
@@ -95,9 +95,9 @@ gin telemetry 中间件，用于记录请求的指标和链路追踪信息. 以�
 ```go
 logger, f, err := logger.New(logger.Config{})
 if err != nil {
-panic(err)
+    panic(err)
 }
 defer f()
-gin.New().Use(ginmiddleware.TelemetryMiddleware("service", "dev", logger))
+    gin.New().Use(ginmiddleware.TelemetryMiddleware("service", "dev", logger))
 ```
 
