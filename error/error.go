@@ -1,6 +1,9 @@
 package error
 
-import "errors"
+import (
+	"errors"
+	"net/http"
+)
 
 type ServiceError struct {
 	Code    string
@@ -21,4 +24,12 @@ func (e ServiceError) Is(tgt error) bool {
 	}
 
 	return e.Message == target.Message && e.Code == target.Code
+}
+
+func (s ServiceError) AttachToResponse(writer http.ResponseWriter) {
+	writer.Header().Add("error_code", s.Code)
+	writer.Header().Add("error_message", s.Message)
+	for k, v := range s.Attributes {
+		writer.Header().Add(k, v)
+	}
 }

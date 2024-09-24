@@ -1,16 +1,27 @@
 package pkg
 
+import "context"
+
 type (
 	Transition[T StateHolder[S], S comparable] struct {
 		from, to, failed S
 		handler          ActionHandler[T, S]
-		successHooks     []ActionHandler[T, S]
+		afterHooks       []ActionHandler[T, S]
 	}
 
 	TransitionBuilder[T StateHolder[S], S comparable] struct {
 		transition *Transition[T, S]
 	}
 )
+
+func (t *Transition[T, S]) getHandler() ActionHandler[T, S] {
+	if t.handler != nil {
+		return t.handler
+	}
+	return ActionHandlerFunc[T, S](func(ctx context.Context, t T) error {
+		return nil
+	})
+}
 
 func NewTransitionBuilder[T StateHolder[S], S comparable]() *TransitionBuilder[T, S] {
 	return &TransitionBuilder[T, S]{
@@ -38,8 +49,8 @@ func (t *TransitionBuilder[T, S]) Handler(handler ActionHandler[T, S]) *Transiti
 	return t
 }
 
-func (t *TransitionBuilder[T, S]) SuccessHook(handler ActionHandler[T, S]) *TransitionBuilder[T, S] {
-	t.transition.successHooks = append(t.transition.successHooks, handler)
+func (t *TransitionBuilder[T, S]) AfterHook(handler ActionHandler[T, S]) *TransitionBuilder[T, S] {
+	t.transition.afterHooks = append(t.transition.afterHooks, handler)
 	return t
 }
 
