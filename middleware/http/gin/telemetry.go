@@ -46,9 +46,7 @@ var (
 	//	DefaultTelemetryBucketBoundaries 100ms 200ms 400ms 800ms 1s 2s 4s 8s 16s 32s 1m
 	DefaultTelemetryBucketBoundaries = []float64{
 		100,
-		200,
-		400,
-		800,
+		500,
 		float64(time.Second.Milliseconds() * 1),
 		float64(time.Second.Milliseconds() * 2),
 		float64(time.Second.Milliseconds() * 4),
