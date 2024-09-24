@@ -182,8 +182,9 @@ func (hrl *httpResponseLogger) Write(bytes []byte) (int, error) {
 			semconv.HTTPRequestMethodKey.String(request.Method),
 			semconv.DeploymentEnvironmentKey.String(hrl.env),
 			semconv.HTTPResponseStatusCodeKey.Int(hrl.Status()),
-			semconv.HTTPRequestBodySize(int(request.ContentLength)),
-			semconv.HTTPResponseBodySize(hrl.ginCtx.Writer.Size()),
+			// comment: because will record too many attribute. body size is Non-enumerable
+			//semconv.HTTPRequestBodySize(int(request.ContentLength)),
+			//semconv.HTTPResponseBodySize(hrl.ginCtx.Writer.Size()),
 		}
 		hrl.span.SetAttributes(attrs...)
 
