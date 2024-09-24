@@ -49,11 +49,8 @@ var (
 		500,
 		float64(time.Second.Milliseconds() * 1),
 		float64(time.Second.Milliseconds() * 2),
+		float64(time.Second.Milliseconds() * 3),
 		float64(time.Second.Milliseconds() * 4),
-		float64(time.Second.Milliseconds() * 8),
-		float64(time.Second.Milliseconds() * 16),
-		float64(time.Second.Milliseconds() * 32),
-		float64(time.Minute.Milliseconds() * 1),
 	}
 	binaryContentTypes = []string{
 		"application/octet-stream",
