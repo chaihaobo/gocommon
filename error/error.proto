@@ -1,0 +1,9 @@
+syntax = "proto3";
+package error;
+option go_package = "github.com/chaihaobo/gocommon/error";
+
+message Error {
+  string code = 1;
+  string message = 2;
+  map<string, string> attributes = 3;
+}
