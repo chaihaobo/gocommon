@@ -4,6 +4,7 @@ go 1.23.0
 
 require (
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869
+	github.com/fatih/color v1.16.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-resty/resty/v2 v2.14.0
 	github.com/go-sql-driver/mysql v1.8.0
@@ -27,6 +28,7 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.32.0
 	go.opentelemetry.io/otel/trace v1.32.0
 	go.uber.org/zap v1.27.0
+	go.uber.org/zap/exp v0.3.0
 	golang.org/x/crypto v0.28.0
 	google.golang.org/grpc v1.68.0
 	google.golang.org/protobuf v1.35.1
@@ -43,7 +45,6 @@ require (
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
-	github.com/fatih/color v1.16.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect

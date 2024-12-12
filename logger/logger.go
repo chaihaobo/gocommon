@@ -37,14 +37,18 @@ func New(config Config) (Logger, func() error, error) {
 		return nil, nil, err
 	}
 	return &zapLogger{
-			logger: zp,
-		}, func() (err error) {
-			err = zp.Sync()
-			if logRotate != nil {
-				err = logRotate.Close()
-			}
-			return
-		}, nil
+		logger: zp,
+	}, closer(zp, logRotate), nil
+}
+
+func closer(zp *zap.Logger, logRotate *lumberjack.Logger) func() (err error) {
+	return func() (err error) {
+		err = zp.Sync()
+		if logRotate != nil {
+			err = logRotate.Close()
+		}
+		return
+	}
 }
 
 func new(config Config) (*zap.Logger, *lumberjack.Logger, error) {
