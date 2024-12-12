@@ -8,6 +8,8 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
+
+	"github.com/chaihaobo/gocommon/logger/encoder"
 )
 
 // This is the default label for the correlation ID field.
@@ -47,8 +49,9 @@ func New(config Config) (Logger, func() error, error) {
 
 func new(config Config) (*zap.Logger, *lumberjack.Logger, error) {
 	encoderMapping := map[string]func(cfg zapcore.EncoderConfig) zapcore.Encoder{
-		"json":    zapcore.NewJSONEncoder,
-		"console": zapcore.NewConsoleEncoder,
+		"json":      zapcore.NewJSONEncoder,
+		"console":   zapcore.NewConsoleEncoder,
+		"jsoncolor": encoder.NewJSONColorEncoder,
 	}
 	c := zap.NewProductionConfig()
 	c.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
