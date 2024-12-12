@@ -11,5 +11,6 @@ func main() {
 		Encoding: "jsoncolor",
 	})
 	l.Info(context.Background(), "hello world")
+	l.Info(context.Background(), "hello world")
 
 }
