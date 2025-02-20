@@ -1,10 +1,11 @@
 package rest
 
 import (
-	"github.com/chaihaobo/gocommon/logger"
-	"github.com/chaihaobo/gocommon/sdk/rest/middleware"
 	"sync"
 	"time"
+
+	"github.com/chaihaobo/gocommon/logger"
+	"github.com/chaihaobo/gocommon/sdk/rest/middleware"
 )
 
 type (

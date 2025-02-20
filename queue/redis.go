@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding"
 	"fmt"
-	"github.com/chaihaobo/gocommon/logger"
 	"reflect"
 	"time"
+
+	"github.com/chaihaobo/gocommon/logger"
 
 	"github.com/hibiken/asynq"
 	"go.uber.org/zap"
