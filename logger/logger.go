@@ -21,7 +21,7 @@ type Logger interface {
 	Info(ctx context.Context, msg string, fields ...zap.Field)
 	// Warn logs a message at Warn level
 	Warn(ctx context.Context, msg string, fields ...zap.Field)
-	// Error logs a message at Errors level
+	// Error logs a message at Error level
 	Error(ctx context.Context, msg string, err error, fields ...zap.Field)
 }
 

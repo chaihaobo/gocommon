@@ -5,10 +5,15 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"os"
 	"time"
 
-	"github.com/chaihaobo/gocommon/tls"
 	"github.com/go-sql-driver/mysql"
+	gormMysqlDriver "gorm.io/driver/mysql"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+
+	"github.com/chaihaobo/gocommon/tls"
 )
 
 const (
@@ -16,22 +21,6 @@ const (
 	DefaultMaxIdle     = 10
 	DefaultMaxLifetime = 3
 )
-
-type Config struct {
-	Host        string
-	Port        string
-	User        string
-	Password    string
-	Name        string
-	MaxOpen     int
-	MaxIdle     int
-	MaxLifetime int // in minutes
-	MaxIdleTime int // in minutes
-	CA          []byte
-	ServerName  string
-	ParseTime   bool
-	Location    string
-}
 
 func dataSourceName(config Config) string {
 	connection := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", config.User, config.Password, config.Host, config.Port, config.Name)
@@ -95,4 +84,36 @@ func DB(config Config) (*sql.DB, error) {
 	}
 
 	return db, nil
+}
+
+// GormDB return new gorm db
+func GormDB(config Config, gormConfig *gorm.Config) (*gorm.DB, error) {
+	rawDB, err := DB(config)
+	if err != nil {
+		return nil, err
+	}
+	if gormConfig == nil {
+		gormConfig = defaultGormConfig()
+	}
+	gormDB, err := gorm.Open(gormMysqlDriver.New(gormMysqlDriver.Config{
+		Conn: rawDB,
+	}), gormConfig)
+	return gormDB, nil
+}
+
+// defaultGormConfig return default gorm config
+func defaultGormConfig() *gorm.Config {
+	defaultGormConfig := &gorm.Config{
+		SkipDefaultTransaction: true,
+		Logger: logger.New(
+			log.New(os.Stdout, "\r\n", log.LstdFlags),
+			logger.Config{
+				SlowThreshold:             time.Second,
+				LogLevel:                  logger.Warn,
+				IgnoreRecordNotFoundError: true,
+				Colorful:                  true,
+			},
+		),
+	}
+	return defaultGormConfig
 }
