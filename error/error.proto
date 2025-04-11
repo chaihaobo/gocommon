@@ -1,5 +1,5 @@
 syntax = "proto3";
-package error;
+package tech.chaihaobo.gocommon.error;
 option go_package = "github.com/chaihaobo/gocommon/error";
 
 message Error {
