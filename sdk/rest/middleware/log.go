@@ -34,6 +34,7 @@ func (l *LoggingMiddleware) PreRequestHook(client *resty.Client, request *http.R
 func (l *LoggingMiddleware) OnAfterResponse(client *resty.Client, response *resty.Response) error {
 	l.logger.Info(response.Request.Context(), "response",
 		zap.String("status", response.Status()),
+		zap.Any("headers", response.Header()),
 		zap.Any("body", string(response.Body())),
 		zap.String("timeused", response.Time().String()),
 	)
