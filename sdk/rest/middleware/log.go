@@ -2,9 +2,10 @@ package middleware
 
 import (
 	"bytes"
-	"github.com/chaihaobo/gocommon/logger"
 	"io"
 	"net/http"
+
+	"github.com/chaihaobo/gocommon/logger"
 
 	"github.com/go-resty/resty/v2"
 	"go.uber.org/zap"
@@ -32,6 +33,7 @@ func (l *LoggingMiddleware) PreRequestHook(client *resty.Client, request *http.R
 
 func (l *LoggingMiddleware) OnAfterResponse(client *resty.Client, response *resty.Response) error {
 	l.logger.Info(response.Request.Context(), "response",
+		zap.String("status", response.Status()),
 		zap.Any("body", string(response.Body())),
 		zap.String("timeused", response.Time().String()),
 	)
