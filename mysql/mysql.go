@@ -25,7 +25,6 @@ const (
 func dataSourceName(config Config) string {
 	connection := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", config.User, config.Password, config.Host, config.Port, config.Name)
 	val := url.Values{}
-
 	if config.ParseTime {
 		val.Add("parseTime", "1")
 	}
@@ -55,7 +54,6 @@ func DB(config Config) (*sql.DB, error) {
 			return nil, err
 		}
 	}
-
 	db, err := sql.Open("mysql", dataSourceName(config))
 	if err != nil {
 		return nil, err

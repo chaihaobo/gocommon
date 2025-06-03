@@ -355,6 +355,10 @@ func TelemetryUnaryServerInterceptor(serviceName, env string, logger logger.Logg
 		} else {
 			messageSent.Event(ctx, 1, resp)
 		}
+		// attach trace id
+		_ = grpc.SetTrailer(ctx, metadata.New(map[string]string{
+			"trace-id": span.SpanContext().TraceID().String(),
+		}))
 
 		isInboundTraffic := true
 		pushAdditional(ctx, logger, serviceName, env, info.FullMethod, err, req, resp, startTime, isInboundTraffic)

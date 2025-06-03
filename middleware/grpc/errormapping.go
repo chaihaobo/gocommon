@@ -2,7 +2,7 @@ package grpc
 
 import (
 	"context"
-	"log"
+	"log/slog"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -26,7 +26,7 @@ func ErrorMappingUnaryServerInterceptor(errorMapper map[string]codes.Code) grpc.
 			case commonErr.ServiceError:
 				md := errorMetadata(serviceError)
 				if err := grpc.SetTrailer(ctx, md); err != nil {
-					log.Println(err.Error())
+					slog.ErrorContext(ctx, "failed to set trailer", slog.Any("error", err))
 				}
 				statusCode, found := errorMapper[serviceError.Code]
 				if !found {

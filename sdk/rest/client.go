@@ -2,11 +2,13 @@ package rest
 
 import (
 	"context"
-	"github.com/chaihaobo/gocommon/logger"
-	"github.com/chaihaobo/gocommon/sdk/rest/middleware"
-	"github.com/go-resty/resty/v2"
 	"net/http"
 	"time"
+
+	"github.com/go-resty/resty/v2"
+
+	"github.com/chaihaobo/gocommon/logger"
+	"github.com/chaihaobo/gocommon/sdk/rest/middleware"
 )
 
 type (
@@ -75,10 +77,18 @@ func (c client) execute(ctx context.Context, method string, url string, body, re
 
 func NewClient(logger logger.Logger, host string, timeout time.Duration,
 	customMiddlewares ...middleware.Middleware) Client {
+	return NewGenericClient(logger, host, nil, timeout, customMiddlewares...)
+}
+
+func NewGenericClient(logger logger.Logger, host string, baseHeaders map[string]string, timeout time.Duration,
+	customMiddlewares ...middleware.Middleware) Client {
 	restyClient := resty.New()
 	restyClient.SetBaseURL(host)
 	if timeout > 0 {
 		restyClient.SetTimeout(timeout)
+	}
+	if len(baseHeaders) > 0 {
+		restyClient.SetHeaders(baseHeaders)
 	}
 	append(middleware.MiddleWares(logger), customMiddlewares...).Apply(restyClient)
 	return &client{

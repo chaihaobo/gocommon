@@ -93,6 +93,8 @@ func TelemetryMiddleware(serviceName, env string, logger logger.Logger) gin.Hand
 			startTime:      time.Now(),
 			span:           span,
 		}
+		// attach trace id
+		gctx.Writer.Header().Add("trace-id", span.SpanContext().TraceID().String())
 		gctx.Next()
 
 	}

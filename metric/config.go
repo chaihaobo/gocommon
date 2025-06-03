@@ -24,7 +24,7 @@ func (c Config) GetRegister() prometheus.Registerer {
 }
 
 func (c Config) GetGatherer() prometheus.Gatherer {
-	if c.Registerer == nil {
+	if c.Gatherer == nil {
 		return prometheus.DefaultGatherer
 	}
 	return c.Gatherer
